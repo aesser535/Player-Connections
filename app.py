@@ -5,8 +5,7 @@ import pandas as pd
 st.set_page_config(layout="wide")
 
 # Load the data
-df = pd.read_csv('combined_players_updated.csv')
-
+df = pd.read_csv('/Users/esser/Downloads/combined_players_updated.csv')
 
 # Drop rows where all elements are NaN
 df = df.dropna(how='all')
@@ -58,6 +57,7 @@ if player_name:
                     <div><span class='info-label'>Team:</span> {player_info['Team']}</div>
                     <div><span class='info-label'>Team Location:</span> {player_info['Team_Location']}</div>
                     <div><span class='info-label'>League:</span> {player_info['League']}</div>
+                    <div><span class='info-label'>Age:</span> {player_info['Age']}</div>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -68,8 +68,14 @@ if player_name:
             team = player_info['Team']
             team_location = player_info['Team_Location']
             league = player_info['League']
+            age = player_info['Age']
             
             with st.expander("Connections"):
+                if pd.notna(college) and pd.notna(age):
+                    st.write(f"**College with Age Range (±1 year):** {college}")
+                    age_range_df = df[(df['College'] == college) & (df['Age'].between(age - 1, age + 1))]
+                    st.dataframe(age_range_df, width=1500, height=600)
+
                 if pd.notna(nationality):
                     st.write(f"**Nationality:** {nationality}")
                     st.dataframe(df[df['Nationality'] == nationality], width=1500, height=600)
@@ -95,3 +101,4 @@ if player_name:
         st.write("No player found with that name.")
 else:
     st.write("Please enter a player name.")
+  
