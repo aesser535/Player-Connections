@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(layout="wide")
 
 # Load the data
-df = pd.read_csv('/Users/esser/Downloads/combined_players_updated.csv')
+df = pd.read_csv('combined_players_updated.csv')
 
 # Drop rows where all elements are NaN
 df = df.dropna(how='all')
