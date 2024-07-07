@@ -5,8 +5,8 @@ import pandas as pd
 st.set_page_config(layout="wide")
 
 # Load the DataFrames
-df_combined = pd.read_csv('/Users/esser/Downloads/combined_players_updated.csv')
-df_nfl = pd.read_csv('/Users/esser/Downloads/nfl_players_sorted_2019_2023.csv')
+df_combined = pd.read_csv('combined_players_updated.csv')
+df_nfl = pd.read_csv('nfl_players_sorted_2019_2023.csv')
 
 # Drop rows where all elements are NaN
 df_combined = df_combined.dropna(how='all')
