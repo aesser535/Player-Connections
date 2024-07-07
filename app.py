@@ -4,11 +4,12 @@ import pandas as pd
 # Set the page configuration to use the full width of the screen
 st.set_page_config(layout="wide")
 
-# Load the data
-df = pd.read_csv('combined_players_updated.csv')
+# Load the DataFrames
+df_combined = pd.read_csv('/Users/esser/Downloads/combined_players_updated.csv')
+df_nfl = pd.read_csv('/Users/esser/Downloads/nfl_players_sorted_2019_2023.csv')
 
 # Drop rows where all elements are NaN
-df = df.dropna(how='all')
+df_combined = df_combined.dropna(how='all')
 
 # Custom CSS for increasing font size and making the text bigger
 st.markdown("""
@@ -30,13 +31,39 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Define the function to get teammates for NFL data
+def get_teammates(player_name, df_nfl):
+    # Filter the DataFrame to get the specific player
+    player_df = df_nfl[df_nfl['name'] == player_name]
+    
+    if player_df.empty:
+        return pd.DataFrame()  # Return an empty DataFrame if no data found
+    
+    # Get the teams and seasons the player was part of
+    player_teams_seasons = player_df[['team', 'season']]
+
+    # Find all players who shared the same team and season
+    teammates = df_nfl.merge(player_teams_seasons, on=['team', 'season'])
+    
+    # Filter out the specified player from the teammates list
+    teammates = teammates[teammates['name'] != player_name]
+    
+    # Calculate the duration (in seasons) each teammate played with the specified player
+    teammates_duration = teammates.groupby('name').agg({'season': 'nunique', 'team': 'first'}).reset_index()
+    teammates_duration.rename(columns={'season': 'seasons_played_together'}, inplace=True)
+
+    # Sort by seasons_played_together in descending order
+    teammates_duration = teammates_duration.sort_values(by='seasons_played_together', ascending=False)
+
+    return teammates_duration
+
 # Streamlit app
 st.title("Player Search and Connections")
 
 player_name = st.text_input("Enter player name:")
 
 if player_name:
-    matching_players = df[df['FullName'].str.contains(player_name, case=False, na=False)]
+    matching_players = df_combined[df_combined['FullName'].str.contains(player_name, case=False, na=False)]
     if not matching_players.empty:
         if len(matching_players) > 1:
             st.write("Multiple players found. Please select the player:")
@@ -73,32 +100,40 @@ if player_name:
             with st.expander("Connections"):
                 if pd.notna(college) and pd.notna(age):
                     st.write(f"**College with Age Range (±1 year):** {college}")
-                    age_range_df = df[(df['College'] == college) & (df['Age'].between(age - 1, age + 1))]
+                    age_range_df = df_combined[(df_combined['College'] == college) & (df_combined['Age'].between(age - 1, age + 1))]
                     st.dataframe(age_range_df, width=1500, height=600)
 
                 if pd.notna(nationality):
                     st.write(f"**Nationality:** {nationality}")
-                    st.dataframe(df[df['Nationality'] == nationality], width=1500, height=600)
+                    st.dataframe(df_combined[df_combined['Nationality'] == nationality], width=1500, height=600)
                 
                 if pd.notna(college):
                     st.write(f"**College:** {college}")
-                    st.dataframe(df[df['College'] == college], width=1500, height=600)
+                    st.dataframe(df_combined[df_combined['College'] == college], width=1500, height=600)
                 
                 if pd.notna(high_school):
                     st.write(f"**High School:** {high_school}")
-                    st.dataframe(df[df['HighSchool'] == high_school], width=1500, height=600)
+                    st.dataframe(df_combined[df_combined['HighSchool'] == high_school], width=1500, height=600)
                 
                 if pd.notna(team) and pd.notna(league):
                     st.write(f"**Team:** {team} in {league}")
-                    st.dataframe(df[(df['Team'] == team) & (df['League'] == league)], width=1500, height=600)
+                    st.dataframe(df_combined[(df_combined['Team'] == team) & (df_combined['League'] == league)], width=1500, height=600)
                 
                 if pd.notna(team_location):
                     st.write(f"**Team Location:** {team_location}")
-                    st.dataframe(df[df['Team_Location'] == team_location], width=1500, height=600)
+                    st.dataframe(df_combined[df_combined['Team_Location'] == team_location], width=1500, height=600)
+                
+                # Add NFL teammates information if the player is in the NFL
+                if league == 'NFL':
+                    st.write(f"**NFL Teammates:**")
+                    teammates = get_teammates(player_name, df_nfl)
+                    if not teammates.empty:
+                        st.dataframe(teammates, width=1500, height=600)
+                    else:
+                        st.write(f"No teammates data found for player: {player_name}")
         else:
             st.write("No player found with that name.")
     else:
         st.write("No player found with that name.")
 else:
     st.write("Please enter a player name.")
-  
