@@ -16,8 +16,10 @@ df_combined = df_combined.dropna(how='all')
 def standardize_name(name):
     if pd.isna(name):
         return ''
-    # Remove non-alphanumeric characters, including spaces, and convert to lowercase
-    return re.sub(r'[^a-zA-Z0-9]', '', name).lower().strip()
+    # Remove non-alphanumeric characters, split based on capitalization, and convert to lowercase
+    name = re.sub(r'[^a-zA-Z0-9]', '', name).strip()
+    name_parts = re.findall('[A-Z][^A-Z]*', name)
+    return ''.join(name_parts).lower()
 
 # Apply the function to create standardized names in both DataFrames
 df_combined['standard_name'] = df_combined['FullName'].apply(standardize_name)
