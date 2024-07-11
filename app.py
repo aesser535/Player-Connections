@@ -16,6 +16,7 @@ df_combined = df_combined.dropna(how='all')
 def standardize_name(name):
     if pd.isna(name):
         return ''
+    # Remove non-alphanumeric characters, including spaces, and convert to lowercase
     return re.sub(r'[^a-zA-Z0-9]', '', name).lower().strip()
 
 # Apply the function to create standardized names in both DataFrames
@@ -150,5 +151,6 @@ if player_name:
         st.write("No player found with that name.")
 else:
     st.write("Please enter a player name.")
+
 
 
