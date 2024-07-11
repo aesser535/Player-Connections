@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 
 # Set the page configuration to use the full width of the screen
 st.set_page_config(layout="wide")
@@ -10,6 +11,16 @@ df_nfl = pd.read_csv('nfl_players_sorted_2019_2023.csv')
 
 # Drop rows where all elements are NaN
 df_combined = df_combined.dropna(how='all')
+
+# Function to standardize names
+def standardize_name(name):
+    if pd.isna(name):
+        return ''
+    return re.sub(r'[^a-zA-Z0-9]', '', name).lower().strip()
+
+# Apply the function to create standardized names in both DataFrames
+df_combined['standard_name'] = df_combined['FullName'].apply(standardize_name)
+df_nfl['standard_name'] = df_nfl['name'].apply(standardize_name)
 
 # Custom CSS for increasing font size and making the text bigger
 st.markdown("""
@@ -34,7 +45,7 @@ st.markdown("""
 # Define the function to get teammates for NFL data
 def get_teammates(player_name, df_nfl):
     # Filter the DataFrame to get the specific player
-    player_df = df_nfl[df_nfl['name'] == player_name]
+    player_df = df_nfl[df_nfl['standard_name'] == player_name]
     
     if player_df.empty:
         return pd.DataFrame()  # Return an empty DataFrame if no data found
@@ -46,7 +57,7 @@ def get_teammates(player_name, df_nfl):
     teammates = df_nfl.merge(player_teams_seasons, on=['team', 'season'])
     
     # Filter out the specified player from the teammates list
-    teammates = teammates[teammates['name'] != player_name]
+    teammates = teammates[teammates['standard_name'] != player_name]
     
     # Calculate the duration (in seasons) each teammate played with the specified player
     teammates_duration = teammates.groupby('name').agg({'season': 'nunique', 'team': 'first'}).reset_index()
@@ -63,7 +74,9 @@ st.title("Player Search and Connections")
 player_name = st.text_input("Enter player name:")
 
 if player_name:
-    matching_players = df_combined[df_combined['FullName'].str.contains(player_name, case=False, na=False)]
+    standardized_name = standardize_name(player_name)
+    matching_players = df_combined[df_combined['standard_name'].str.contains(standardized_name, case=False, na=False)]
+    
     if not matching_players.empty:
         if len(matching_players) > 1:
             st.write("Multiple players found. Please select the player:")
@@ -126,7 +139,7 @@ if player_name:
                 # Add NFL teammates information if the player is in the NFL
                 if league == 'NFL':
                     st.write(f"**NFL Teammates:**")
-                    teammates = get_teammates(player_name, df_nfl)
+                    teammates = get_teammates(standardized_name, df_nfl)
                     if not teammates.empty:
                         st.dataframe(teammates, width=1500, height=600)
                     else:
@@ -137,3 +150,4 @@ if player_name:
         st.write("No player found with that name.")
 else:
     st.write("Please enter a player name.")
+
