@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 
@@ -65,11 +64,13 @@ player_name = st.text_input("Enter player name:")
 
 if player_name:
     matching_players = df_combined[df_combined['FullName'].str.contains(player_name, case=False, na=False)]
+    
     if not matching_players.empty:
         if len(matching_players) > 1:
+            matching_players['selection'] = matching_players.apply(lambda row: f"{row['FullName']} ({row['Team']}, {row['League']})", axis=1)
             st.write("Multiple players found. Please select the player:")
-            player_selection = st.selectbox("Select a player:", matching_players['FullName'].unique())
-            player_data = matching_players[matching_players['FullName'] == player_selection]
+            player_selection = st.selectbox("Select a player:", matching_players['selection'].unique())
+            player_data = matching_players[matching_players['selection'] == player_selection]
         else:
             player_data = matching_players
         
@@ -127,7 +128,7 @@ if player_name:
                 # Add NFL teammates information if the player is in the NFL
                 if league == 'NFL':
                     st.write(f"**NFL Teammates:**")
-                    teammates = get_teammates(player_name, df_nfl)
+                    teammates = get_teammates(player_info['FullName'], df_nfl)
                     if not teammates.empty:
                         st.dataframe(teammates, width=1500, height=600)
                     else:
